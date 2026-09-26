@@ -1,0 +1,8 @@
+node_modules/
+.env
+.approved_wallets.json
+OPSEC.md
+HARDENING.md
+*.log
+.DS_Store
+Thumbs.db

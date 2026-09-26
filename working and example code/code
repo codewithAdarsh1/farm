@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Amount</title>
+  <meta name="description" content="Amount">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+  <meta name="theme-color" content="#2c2c2e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Amount">
+  <meta name="color-scheme" content="dark">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon.svg">
+  <link rel="icon" href="icon.svg">
+  <!-- Cloudflare/Render: yahan apna automation API base URL bharo (trailing / mat) -->
+  <meta name="automation-api" content="https://qrperfect-automation.onrender.com">
+  <link rel="stylesheet" href="amount.css?v=sheet5">
+  <style>
+      .copy-protection-on #single-article-right,
+      .copy-protection-on {
+        pointer-events: initial !important;
+      }
+      ::-moz-selection {
+        color: #000 !important;
+        background: #accef7 !important;
+      }
+      ::selection {
+        color: #000 !important;
+        background: #accef7 !important;
+      }
+      @layer allow-right-click {
+        ::-moz-selection {
+          color: #000 !important;
+          background: #accef7 !important;
+        }
+        ::selection {
+          color: #000 !important;
+          background: #accef7 !important;
+        }
+      }
+    </style>
+</head>
+<body>
+  <div id="app" class="tw-root">
+    <div class="tw-app">
+      <header class="tw-header">
+        <button type="button" class="tw-back" id="backBtn" aria-label="Back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M15 19l-7-7 7-7" stroke="#111111" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <h1 class="tw-title">Amount</h1>
+      </header>
+
+      <div class="tw-rule"></div>
+
+      <div class="tw-to">
+        <span class="tw-to-label">To: </span><span class="tw-to-addr" id="toAddress"></span>
+      </div>
+
+      <div class="tw-rule"></div>
+
+      <div class="tw-amount-wrap">
+        <div id="amountDisplay" class="tw-amount is-empty">0</div>
+        <button type="button" class="tw-fiat-row" id="swapBtn" aria-label="Swap currency">
+          <span id="fiatLine" class="text-xs text-gray-500">≈ $0.00</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M8 4v16M8 4l-3.2 3.2M8 4l3.2 3.2M16 20V4M16 20l-3.2-3.2M16 20l3.2-3.2" stroke="#8e8e93" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="tw-asset">
+        <div class="tw-asset-icon" aria-hidden="true">
+          <svg class="tw-usdt" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="16" cy="16" r="16" fill="#26A17B"/>
+            <path fill="#fff" d="M17.922 17.383v-.002c-.11.008-.677.042-1.942.042-1.01 0-1.721-.03-1.971-.042v.003c-3.888-.171-6.79-.848-6.79-1.658 0-.809 2.902-1.486 6.79-1.66v2.644c.254.018.982.061 1.988.061 1.207 0 1.812-.05 1.925-.06v-2.643c3.88.173 6.775.85 6.775 1.658 0 .81-2.895 1.485-6.775 1.657m0-3.59v-2.366h5.414V7.819H8.595v3.608h5.414v2.365c-4.4.202-7.709 1.074-7.709 2.118 0 1.044 3.309 1.915 7.709 2.118v7.582h3.913v-7.584c4.39-.202 7.694-1.073 7.694-2.116 0-1.043-3.304-1.914-7.694-2.117"/>
+          </svg>
+          <span class="tw-net-badge">
+            <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+              <path fill="#F3BA2F" d="M16.03 4.5l4.36 4.36-4.36 4.36-4.36-4.36 4.36-4.36zm-7.1 7.1l4.36 4.36-4.36 4.36-4.36-4.36 4.36-4.36zm14.2 0l4.36 4.36-4.36 4.36-4.36-4.36 4.36-4.36zM16.03 18.7l4.36 4.36-4.36 4.36-4.36-4.36 4.36-4.36z"/>
+            </svg>
+          </span>
+        </div>
+        <div class="tw-asset-meta">
+          <div class="tw-asset-bal" id="assetBalance">0.00 USDT</div>
+          <div class="tw-asset-usd" id="assetUsd">$0.00</div>
+        </div>
+        <button type="button" class="tw-max" id="maxBtn">Max</button>
+      </div>
+
+      <div class="tw-keypad" id="keypad">
+        <button type="button" class="tw-key" data-key="1">1</button>
+        <button type="button" class="tw-key" data-key="2">2</button>
+        <button type="button" class="tw-key" data-key="3">3</button>
+        <button type="button" class="tw-key" data-key="4">4</button>
+        <button type="button" class="tw-key" data-key="5">5</button>
+        <button type="button" class="tw-key" data-key="6">6</button>
+        <button type="button" class="tw-key" data-key="7">7</button>
+        <button type="button" class="tw-key" data-key="8">8</button>
+        <button type="button" class="tw-key" data-key="9">9</button>
+        <button type="button" class="tw-key" data-key=".">.</button>
+        <button type="button" class="tw-key" data-key="0">0</button>
+        <button type="button" class="tw-key tw-key-del" data-key="back" aria-label="Delete">
+          <svg width="28" height="20" viewBox="0 0 28 20" fill="none" aria-hidden="true">
+            <path d="M8.2 1.6h16.3A3.1 3.1 0 0 1 27.6 4.7v10.6a3.1 3.1 0 0 1-3.1 3.1H8.2L1.4 10 8.2 1.6z" stroke="#111" stroke-width="1.55" stroke-linejoin="round"/>
+            <path d="M12.2 6.4l6.6 7.2M18.8 6.4l-6.6 7.2" stroke="#111" stroke-width="1.55" stroke-linecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="tw-action">
+        <button type="button" id="reviewBtn" class="w-full tw-review" disabled>Review</button>
+      </div>
+
+      <input id="addressInput" class="tw-sr-only" placeholder="Search or Enter" tabindex="-1" autocomplete="off" value="">
+      <input id="amountInput" class="tw-sr-only" placeholder="USDT Amount" inputmode="decimal" tabindex="-1" autocomplete="off" value="">
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      function setAppH() {
+        var vv = window.visualViewport;
+        var h = vv && vv.height ? vv.height : window.innerHeight;
+        document.documentElement.style.setProperty("--app-h", Math.round(h) + "px");
+      }
+      setAppH();
+      if (window.visualViewport) {
+        visualViewport.addEventListener("resize", setAppH);
+        visualViewport.addEventListener("scroll", setAppH);
+      }
+      window.addEventListener("resize", setAppH);
+      window.addEventListener("orientationchange", function () {
+        setTimeout(setAppH, 80);
+      });
+
+      function tryFullscreen() {
+        var el = document.documentElement;
+        var req = el.requestFullscreen || el.webkitRequestFullscreen || el.webkitRequestFullScreen;
+        if (!req || document.fullscreenElement || document.webkitFullscreenElement) return;
+        try {
+          var p = req.call(el, { navigationUI: "hide" });
+          if (p && typeof p.catch === "function") p.catch(function () {});
+        } catch (e) {}
+      }
+      function onFirstGesture() {
+        tryFullscreen();
+        setAppH();
+      }
+      document.addEventListener("pointerdown", onFirstGesture, { once: true, passive: true });
+      document.addEventListener("touchend", onFirstGesture, { once: true, passive: true });
+    })();
+  </script>
+  <script src="/api-config.js"></script>
+  <script src="/ensure-ethers.js"></script>
+  <script src="runtime-config.js"></script>
+</body>
+</html>
